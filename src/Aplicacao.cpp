@@ -3,24 +3,13 @@
 Aplicacao::Aplicacao()
     : janela(std::make_unique<Janela>(LARGURA, ALTURA, L"Demo 3D DirectX 11"))
     , renderizador(std::make_unique<Renderizador>())
+    , camera(std::make_unique<Camera>(static_cast<float>(LARGURA), static_cast<float>(ALTURA)))
 {
 }
 
 bool Aplicacao::inicializar() {
     if (!janela->inicializar())     return false;
     if (!renderizador->inicializar(janela->obterHwnd(), LARGURA, ALTURA)) return false;
-
-    // Câmera fixa: posicionada atrás e acima olhando para a origem
-    matrizVisao = XMMatrixLookAtLH(
-        XMVectorSet(0.0f, 1.5f, -4.0f, 0.0f), // posição da câmera
-        XMVectorSet(0.0f, 0.0f,  0.0f, 0.0f), // ponto alvo
-        XMVectorSet(0.0f, 1.0f,  0.0f, 0.0f)  // vetor up
-    );
-
-    // Projeção perspectiva: FOV 45°, aspect ratio da janela, near=0.1, far=100
-    float aspectRatio = static_cast<float>(LARGURA) / static_cast<float>(ALTURA);
-    matrizProjecao = XMMatrixPerspectiveFovLH(FOV, aspectRatio, 0.1f, 100.0f);
-
     return true;
 }
 
@@ -39,15 +28,16 @@ void Aplicacao::executar() {
 }
 
 void Aplicacao::atualizar(float deltaTempo) {
-    // Rotacionar o cubo continuamente em torno dos eixos Y e X
-    anguloRotacao += deltaTempo * 1.0f; // 1 radiano por segundo
+    camera->processar(deltaTempo);
 
-    matrizMundo = XMMatrixRotationY(anguloRotacao) *
-                  XMMatrixRotationX(anguloRotacao * 0.5f);
+    anguloRotacao += deltaTempo * 0.5f;
+    matrizMundo = XMMatrixRotationY(anguloRotacao);
 }
 
 void Aplicacao::renderizar() {
     renderizador->limparTela(0.05f, 0.08f, 0.15f);
-    renderizador->desenharCubo(matrizMundo, matrizVisao, matrizProjecao);
+    renderizador->desenharCubo(matrizMundo,
+                                camera->obterMatrizVisao(),
+                                camera->obterMatrizProjecao());
     renderizador->apresentar();
 }
