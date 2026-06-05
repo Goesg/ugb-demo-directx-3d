@@ -1,11 +1,9 @@
 #include "Renderizador.h"
-#include <string>
 
 bool Renderizador::inicializar(HWND hwnd, int largura, int altura) {
     this->largura = largura;
     this->altura  = altura;
 
-    // Descrever o swap chain: double buffering, formato RGBA, janela alvo
     DXGI_SWAP_CHAIN_DESC scd = {};
     scd.BufferCount                        = 1;
     scd.BufferDesc.Width                   = largura;
@@ -38,9 +36,10 @@ bool Renderizador::inicializar(HWND hwnd, int largura, int altura) {
     );
     if (FAILED(hr)) return false;
 
-    if (!criarRenderTarget())   return false;
-    if (!compilarShaders())     return false;
-    if (!criarBufferVertices()) return false;
+    if (!criarRenderTarget())    return false;
+    if (!compilarShaders())      return false;
+    if (!criarGeometriaCubo())   return false;
+    if (!criarConstantBuffer())  return false;
 
     return true;
 }
@@ -72,8 +71,7 @@ bool Renderizador::criarRenderTarget() {
                                         depthStencilView.GetAddressOf());
     if (FAILED(hr)) return false;
 
-    contexto->OMSetRenderTargets(1, renderTargetView.GetAddressOf(),
-                                 depthStencilView.Get());
+    contexto->OMSetRenderTargets(1, renderTargetView.GetAddressOf(), depthStencilView.Get());
 
     D3D11_VIEWPORT vp = {};
     vp.Width    = static_cast<float>(largura);
@@ -88,15 +86,13 @@ bool Renderizador::criarRenderTarget() {
 bool Renderizador::compilarShaders() {
     ComPtr<ID3DBlob> blobVS, blobPS, blobErro;
 
-    // Compilar vertex shader a partir do arquivo .hlsl em runtime
     HRESULT hr = D3DCompileFromFile(
         L"shaders/VertexShader.hlsl", nullptr, nullptr,
         "main", "vs_5_0", D3DCOMPILE_DEBUG, 0,
         blobVS.GetAddressOf(), blobErro.GetAddressOf()
     );
     if (FAILED(hr)) {
-        if (blobErro)
-            OutputDebugStringA((char*)blobErro->GetBufferPointer());
+        if (blobErro) OutputDebugStringA((char*)blobErro->GetBufferPointer());
         return false;
     }
 
@@ -106,77 +102,140 @@ bool Renderizador::compilarShaders() {
         blobPS.GetAddressOf(), blobErro.GetAddressOf()
     );
     if (FAILED(hr)) {
-        if (blobErro)
-            OutputDebugStringA((char*)blobErro->GetBufferPointer());
+        if (blobErro) OutputDebugStringA((char*)blobErro->GetBufferPointer());
         return false;
     }
 
-    hr = device->CreateVertexShader(blobVS->GetBufferPointer(),
-                                    blobVS->GetBufferSize(),
+    hr = device->CreateVertexShader(blobVS->GetBufferPointer(), blobVS->GetBufferSize(),
                                     nullptr, vertexShader.GetAddressOf());
     if (FAILED(hr)) return false;
 
-    hr = device->CreatePixelShader(blobPS->GetBufferPointer(),
-                                   blobPS->GetBufferSize(),
+    hr = device->CreatePixelShader(blobPS->GetBufferPointer(), blobPS->GetBufferSize(),
                                    nullptr, pixelShader.GetAddressOf());
     if (FAILED(hr)) return false;
 
-    // Input Layout: descreve como os bytes do vertex buffer mapeiam para o shader
-    // Deve corresponder exatamente ao struct Vertice e às semantics do VertexShader.hlsl
     D3D11_INPUT_ELEMENT_DESC layoutDesc[] = {
         { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, 0,                            D3D11_INPUT_PER_VERTEX_DATA, 0 },
         { "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
     };
 
     hr = device->CreateInputLayout(layoutDesc, 2,
-                                   blobVS->GetBufferPointer(),
-                                   blobVS->GetBufferSize(),
+                                   blobVS->GetBufferPointer(), blobVS->GetBufferSize(),
                                    inputLayout.GetAddressOf());
     return SUCCEEDED(hr);
 }
 
-bool Renderizador::criarBufferVertices() {
-    // Triângulo em NDC (Normalized Device Coordinates): X e Y entre -1 e +1
-    // DirectX usa sistema Left-Handed: winding order clockwise para face frontal
+bool Renderizador::criarGeometriaCubo() {
+    // 8 vértices do cubo — cada face tem uma cor diferente para facilitar visualização
     Vertice vertices[] = {
-        { XMFLOAT3( 0.0f,  0.5f, 0.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) }, // topo       — vermelho
-        { XMFLOAT3( 0.5f, -0.5f, 0.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) }, // direita    — verde
-        { XMFLOAT3(-0.5f, -0.5f, 0.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) }, // esquerda   — azul
+        // frente (vermelho)
+        { XMFLOAT3(-0.5f,  0.5f, -0.5f), XMFLOAT4(1.0f, 0.2f, 0.2f, 1.0f) },
+        { XMFLOAT3( 0.5f,  0.5f, -0.5f), XMFLOAT4(1.0f, 0.2f, 0.2f, 1.0f) },
+        { XMFLOAT3( 0.5f, -0.5f, -0.5f), XMFLOAT4(1.0f, 0.2f, 0.2f, 1.0f) },
+        { XMFLOAT3(-0.5f, -0.5f, -0.5f), XMFLOAT4(1.0f, 0.2f, 0.2f, 1.0f) },
+        // trás (verde)
+        { XMFLOAT3(-0.5f,  0.5f,  0.5f), XMFLOAT4(0.2f, 1.0f, 0.2f, 1.0f) },
+        { XMFLOAT3( 0.5f,  0.5f,  0.5f), XMFLOAT4(0.2f, 1.0f, 0.2f, 1.0f) },
+        { XMFLOAT3( 0.5f, -0.5f,  0.5f), XMFLOAT4(0.2f, 1.0f, 0.2f, 1.0f) },
+        { XMFLOAT3(-0.5f, -0.5f,  0.5f), XMFLOAT4(0.2f, 1.0f, 0.2f, 1.0f) },
+        // cima (azul)
+        { XMFLOAT3(-0.5f,  0.5f,  0.5f), XMFLOAT4(0.2f, 0.4f, 1.0f, 1.0f) },
+        { XMFLOAT3( 0.5f,  0.5f,  0.5f), XMFLOAT4(0.2f, 0.4f, 1.0f, 1.0f) },
+        { XMFLOAT3( 0.5f,  0.5f, -0.5f), XMFLOAT4(0.2f, 0.4f, 1.0f, 1.0f) },
+        { XMFLOAT3(-0.5f,  0.5f, -0.5f), XMFLOAT4(0.2f, 0.4f, 1.0f, 1.0f) },
+        // baixo (amarelo)
+        { XMFLOAT3(-0.5f, -0.5f,  0.5f), XMFLOAT4(1.0f, 1.0f, 0.2f, 1.0f) },
+        { XMFLOAT3( 0.5f, -0.5f,  0.5f), XMFLOAT4(1.0f, 1.0f, 0.2f, 1.0f) },
+        { XMFLOAT3( 0.5f, -0.5f, -0.5f), XMFLOAT4(1.0f, 1.0f, 0.2f, 1.0f) },
+        { XMFLOAT3(-0.5f, -0.5f, -0.5f), XMFLOAT4(1.0f, 1.0f, 0.2f, 1.0f) },
+        // direita (magenta)
+        { XMFLOAT3( 0.5f,  0.5f, -0.5f), XMFLOAT4(1.0f, 0.2f, 1.0f, 1.0f) },
+        { XMFLOAT3( 0.5f,  0.5f,  0.5f), XMFLOAT4(1.0f, 0.2f, 1.0f, 1.0f) },
+        { XMFLOAT3( 0.5f, -0.5f,  0.5f), XMFLOAT4(1.0f, 0.2f, 1.0f, 1.0f) },
+        { XMFLOAT3( 0.5f, -0.5f, -0.5f), XMFLOAT4(1.0f, 0.2f, 1.0f, 1.0f) },
+        // esquerda (ciano)
+        { XMFLOAT3(-0.5f,  0.5f,  0.5f), XMFLOAT4(0.2f, 1.0f, 1.0f, 1.0f) },
+        { XMFLOAT3(-0.5f,  0.5f, -0.5f), XMFLOAT4(0.2f, 1.0f, 1.0f, 1.0f) },
+        { XMFLOAT3(-0.5f, -0.5f, -0.5f), XMFLOAT4(0.2f, 1.0f, 1.0f, 1.0f) },
+        { XMFLOAT3(-0.5f, -0.5f,  0.5f), XMFLOAT4(0.2f, 1.0f, 1.0f, 1.0f) },
     };
 
+    // 6 faces × 2 triângulos × 3 índices = 36 índices
+    // Cada face usa 4 vértices (quad), divididos em 2 triângulos clockwise
+    UINT indices[] = {
+         0,  1,  2,   0,  2,  3,  // frente
+         5,  4,  7,   5,  7,  6,  // trás
+         8,  9, 10,   8, 10, 11,  // cima
+        13, 12, 15,  13, 15, 14,  // baixo
+        16, 17, 18,  16, 18, 19,  // direita
+        20, 21, 22,  20, 22, 23,  // esquerda
+    };
+
+    // Criar vertex buffer
     D3D11_BUFFER_DESC bd = {};
-    bd.Usage          = D3D11_USAGE_IMMUTABLE; // dados não mudam após criação
-    bd.ByteWidth      = sizeof(vertices);
-    bd.BindFlags      = D3D11_BIND_VERTEX_BUFFER;
+    bd.Usage     = D3D11_USAGE_IMMUTABLE;
+    bd.ByteWidth = sizeof(vertices);
+    bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 
     D3D11_SUBRESOURCE_DATA sd = {};
     sd.pSysMem = vertices;
+    HRESULT hr = device->CreateBuffer(&bd, &sd, bufferVertices.GetAddressOf());
+    if (FAILED(hr)) return false;
 
-    return SUCCEEDED(device->CreateBuffer(&bd, &sd, bufferVertices.GetAddressOf()));
+    // Criar index buffer
+    bd.ByteWidth = sizeof(indices);
+    bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+    sd.pSysMem   = indices;
+    hr = device->CreateBuffer(&bd, &sd, bufferIndices.GetAddressOf());
+    return SUCCEEDED(hr);
+}
+
+bool Renderizador::criarConstantBuffer() {
+    // DYNAMIC + CPU_ACCESS_WRITE permite atualizar as matrizes a cada frame via Map/Unmap
+    D3D11_BUFFER_DESC bd = {};
+    bd.Usage          = D3D11_USAGE_DYNAMIC;
+    bd.ByteWidth      = sizeof(DadosConstantes);
+    bd.BindFlags      = D3D11_BIND_CONSTANT_BUFFER;
+    bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+    return SUCCEEDED(device->CreateBuffer(&bd, nullptr, bufferConstante.GetAddressOf()));
 }
 
 void Renderizador::limparTela(float r, float g, float b, float a) {
     float cor[4] = { r, g, b, a };
     contexto->ClearRenderTargetView(renderTargetView.Get(), cor);
     contexto->ClearDepthStencilView(depthStencilView.Get(),
-                                    D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
-                                    1.0f, 0);
+                                    D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 }
 
-void Renderizador::desenharTriangulo() {
-    // Configurar o Input Assembler
+void Renderizador::desenharCubo(const XMMATRIX& mundo, const XMMATRIX& visao, const XMMATRIX& projecao) {
+    // Atualizar constant buffer com as matrizes do frame atual
+    // HLSL espera column-major → transpor antes de enviar
+    D3D11_MAPPED_SUBRESOURCE msr;
+    contexto->Map(bufferConstante.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
+    DadosConstantes* dados = reinterpret_cast<DadosConstantes*>(msr.pData);
+    dados->matrizMundo    = XMMatrixTranspose(mundo);
+    dados->matrizVisao    = XMMatrixTranspose(visao);
+    dados->matrizProjecao = XMMatrixTranspose(projecao);
+    contexto->Unmap(bufferConstante.Get(), 0);
+
+    // Vincular constant buffer ao vertex shader no slot b0
+    contexto->VSSetConstantBuffers(0, 1, bufferConstante.GetAddressOf());
+
+    // Configurar Input Assembler
     UINT stride = sizeof(Vertice);
     UINT offset = 0;
     contexto->IASetVertexBuffers(0, 1, bufferVertices.GetAddressOf(), &stride, &offset);
+    contexto->IASetIndexBuffer(bufferIndices.Get(), DXGI_FORMAT_R32_UINT, 0);
     contexto->IASetInputLayout(inputLayout.Get());
     contexto->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    // Vincular shaders ao pipeline
+    // Vincular shaders
     contexto->VSSetShader(vertexShader.Get(), nullptr, 0);
     contexto->PSSetShader(pixelShader.Get(), nullptr, 0);
 
-    // Desenhar 3 vértices (1 triângulo)
-    contexto->Draw(3, 0);
+    // Desenhar 36 índices (6 faces × 2 triângulos × 3 vértices)
+    contexto->DrawIndexed(36, 0, 0);
 }
 
 void Renderizador::apresentar() {

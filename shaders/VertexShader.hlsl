@@ -1,19 +1,30 @@
-// Dados de entrada: um vértice vindo do vertex buffer
+// Constant buffer com as matrizes de transformação (enviadas pela CPU a cada frame)
+cbuffer ConstantBuffer : register(b0) {
+    matrix matrizMundo;      // posição/rotação/escala do objeto no mundo
+    matrix matrizVisao;      // posição e orientação da câmera
+    matrix matrizProjecao;   // perspectiva (FOV, aspect ratio, near/far)
+};
+
 struct EntradaVS {
     float3 posicao : POSITION;
     float4 cor     : COLOR;
 };
 
-// Dados de saída: o vértice transformado para o pixel shader
 struct SaidaVS {
-    float4 posicao : SV_POSITION; // posição final em clip space
+    float4 posicao : SV_POSITION;
     float4 cor     : COLOR;
 };
 
-// Etapa 2: sem transformações ainda — passa a posição diretamente
 SaidaVS main(EntradaVS entrada) {
     SaidaVS saida;
-    saida.posicao = float4(entrada.posicao, 1.0f);
+
+    // Aplicar as três transformações em sequência: Mundo → Visão → Projeção
+    float4 pos = float4(entrada.posicao, 1.0f);
+    pos = mul(pos, matrizMundo);
+    pos = mul(pos, matrizVisao);
+    pos = mul(pos, matrizProjecao);
+
+    saida.posicao = pos;
     saida.cor     = entrada.cor;
     return saida;
 }
