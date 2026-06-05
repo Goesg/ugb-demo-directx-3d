@@ -25,7 +25,7 @@ void Aplicacao::atualizar() {
 }
 
 void Aplicacao::renderizar() {
-    // Cor de fundo: azul escuro (estilo DirectX tradicional)
     renderizador->limparTela(0.05f, 0.08f, 0.15f);
+    renderizador->desenharTriangulo();
     renderizador->apresentar();
 }

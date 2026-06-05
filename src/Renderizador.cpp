@@ -1,5 +1,5 @@
 #include "Renderizador.h"
-#include <stdexcept>
+#include <string>
 
 bool Renderizador::inicializar(HWND hwnd, int largura, int altura) {
     this->largura = largura;
@@ -15,7 +15,7 @@ bool Renderizador::inicializar(HWND hwnd, int largura, int altura) {
     scd.BufferDesc.RefreshRate.Denominator = 1;
     scd.BufferUsage                        = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     scd.OutputWindow                       = hwnd;
-    scd.SampleDesc.Count                   = 1; // sem MSAA por enquanto
+    scd.SampleDesc.Count                   = 1;
     scd.Windowed                           = TRUE;
     scd.SwapEffect                         = DXGI_SWAP_EFFECT_DISCARD;
 
@@ -28,26 +28,24 @@ bool Renderizador::inicializar(HWND hwnd, int largura, int altura) {
     D3D_FEATURE_LEVEL niveisSuportados[] = { D3D_FEATURE_LEVEL_11_0 };
 
     HRESULT hr = D3D11CreateDeviceAndSwapChain(
-        nullptr,                  // adaptador padrão
-        D3D_DRIVER_TYPE_HARDWARE, // usar GPU
-        nullptr,
-        flags,
-        niveisSuportados, 1,
-        D3D11_SDK_VERSION,
+        nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr,
+        flags, niveisSuportados, 1, D3D11_SDK_VERSION,
         &scd,
         swapChain.GetAddressOf(),
         device.GetAddressOf(),
         &featureLevel,
         contexto.GetAddressOf()
     );
-
     if (FAILED(hr)) return false;
 
-    return criarRenderTarget();
+    if (!criarRenderTarget())   return false;
+    if (!compilarShaders())     return false;
+    if (!criarBufferVertices()) return false;
+
+    return true;
 }
 
 bool Renderizador::criarRenderTarget() {
-    // Obter o back buffer do swap chain para criar o render target
     ComPtr<ID3D11Texture2D> backBuffer;
     HRESULT hr = swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D),
                                       reinterpret_cast<void**>(backBuffer.GetAddressOf()));
@@ -57,7 +55,6 @@ bool Renderizador::criarRenderTarget() {
                                         renderTargetView.GetAddressOf());
     if (FAILED(hr)) return false;
 
-    // Criar depth/stencil buffer para teste de profundidade correto entre faces
     D3D11_TEXTURE2D_DESC dsd = {};
     dsd.Width            = largura;
     dsd.Height           = altura;
@@ -75,11 +72,9 @@ bool Renderizador::criarRenderTarget() {
                                         depthStencilView.GetAddressOf());
     if (FAILED(hr)) return false;
 
-    // Vincular render target e depth buffer ao Output Merger
     contexto->OMSetRenderTargets(1, renderTargetView.GetAddressOf(),
                                  depthStencilView.Get());
 
-    // Configurar viewport para cobrir a janela inteira
     D3D11_VIEWPORT vp = {};
     vp.Width    = static_cast<float>(largura);
     vp.Height   = static_cast<float>(altura);
@@ -90,6 +85,76 @@ bool Renderizador::criarRenderTarget() {
     return true;
 }
 
+bool Renderizador::compilarShaders() {
+    ComPtr<ID3DBlob> blobVS, blobPS, blobErro;
+
+    // Compilar vertex shader a partir do arquivo .hlsl em runtime
+    HRESULT hr = D3DCompileFromFile(
+        L"shaders/VertexShader.hlsl", nullptr, nullptr,
+        "main", "vs_5_0", D3DCOMPILE_DEBUG, 0,
+        blobVS.GetAddressOf(), blobErro.GetAddressOf()
+    );
+    if (FAILED(hr)) {
+        if (blobErro)
+            OutputDebugStringA((char*)blobErro->GetBufferPointer());
+        return false;
+    }
+
+    hr = D3DCompileFromFile(
+        L"shaders/PixelShader.hlsl", nullptr, nullptr,
+        "main", "ps_5_0", D3DCOMPILE_DEBUG, 0,
+        blobPS.GetAddressOf(), blobErro.GetAddressOf()
+    );
+    if (FAILED(hr)) {
+        if (blobErro)
+            OutputDebugStringA((char*)blobErro->GetBufferPointer());
+        return false;
+    }
+
+    hr = device->CreateVertexShader(blobVS->GetBufferPointer(),
+                                    blobVS->GetBufferSize(),
+                                    nullptr, vertexShader.GetAddressOf());
+    if (FAILED(hr)) return false;
+
+    hr = device->CreatePixelShader(blobPS->GetBufferPointer(),
+                                   blobPS->GetBufferSize(),
+                                   nullptr, pixelShader.GetAddressOf());
+    if (FAILED(hr)) return false;
+
+    // Input Layout: descreve como os bytes do vertex buffer mapeiam para o shader
+    // Deve corresponder exatamente ao struct Vertice e às semantics do VertexShader.hlsl
+    D3D11_INPUT_ELEMENT_DESC layoutDesc[] = {
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, 0,                            D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+    };
+
+    hr = device->CreateInputLayout(layoutDesc, 2,
+                                   blobVS->GetBufferPointer(),
+                                   blobVS->GetBufferSize(),
+                                   inputLayout.GetAddressOf());
+    return SUCCEEDED(hr);
+}
+
+bool Renderizador::criarBufferVertices() {
+    // Triângulo em NDC (Normalized Device Coordinates): X e Y entre -1 e +1
+    // DirectX usa sistema Left-Handed: winding order clockwise para face frontal
+    Vertice vertices[] = {
+        { XMFLOAT3( 0.0f,  0.5f, 0.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) }, // topo       — vermelho
+        { XMFLOAT3( 0.5f, -0.5f, 0.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) }, // direita    — verde
+        { XMFLOAT3(-0.5f, -0.5f, 0.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) }, // esquerda   — azul
+    };
+
+    D3D11_BUFFER_DESC bd = {};
+    bd.Usage          = D3D11_USAGE_IMMUTABLE; // dados não mudam após criação
+    bd.ByteWidth      = sizeof(vertices);
+    bd.BindFlags      = D3D11_BIND_VERTEX_BUFFER;
+
+    D3D11_SUBRESOURCE_DATA sd = {};
+    sd.pSysMem = vertices;
+
+    return SUCCEEDED(device->CreateBuffer(&bd, &sd, bufferVertices.GetAddressOf()));
+}
+
 void Renderizador::limparTela(float r, float g, float b, float a) {
     float cor[4] = { r, g, b, a };
     contexto->ClearRenderTargetView(renderTargetView.Get(), cor);
@@ -98,6 +163,22 @@ void Renderizador::limparTela(float r, float g, float b, float a) {
                                     1.0f, 0);
 }
 
+void Renderizador::desenharTriangulo() {
+    // Configurar o Input Assembler
+    UINT stride = sizeof(Vertice);
+    UINT offset = 0;
+    contexto->IASetVertexBuffers(0, 1, bufferVertices.GetAddressOf(), &stride, &offset);
+    contexto->IASetInputLayout(inputLayout.Get());
+    contexto->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    // Vincular shaders ao pipeline
+    contexto->VSSetShader(vertexShader.Get(), nullptr, 0);
+    contexto->PSSetShader(pixelShader.Get(), nullptr, 0);
+
+    // Desenhar 3 vértices (1 triângulo)
+    contexto->Draw(3, 0);
+}
+
 void Renderizador::apresentar() {
-    swapChain->Present(1, 0); // vsync ativo (1)
+    swapChain->Present(1, 0);
 }

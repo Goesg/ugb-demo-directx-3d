@@ -95,6 +95,11 @@
     <ClInclude Include="src\Renderizador.h" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="shaders\VertexShader.hlsl" />
+    <None Include="shaders\PixelShader.hlsl" />
+  </ItemGroup>
+
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 
 </Project>
