@@ -2,6 +2,7 @@
 #include "Janela.h"
 #include "Renderizador.h"
 #include "Camera.h"
+#include "Textura.h"
 #include <memory>
 #include <chrono>
 
@@ -20,6 +21,7 @@ private:
     std::unique_ptr<Janela>       janela;
     std::unique_ptr<Renderizador> renderizador;
     std::unique_ptr<Camera>       camera;
+    Textura                       textura;
 
     XMMATRIX matrizMundo;
     float    anguloRotacao = 0.0f;

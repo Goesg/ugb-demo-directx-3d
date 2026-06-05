@@ -88,6 +88,7 @@
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\Janela.cpp" />
     <ClCompile Include="src\Renderizador.cpp" />
+    <ClCompile Include="src\Textura.cpp" />
   </ItemGroup>
 
   <ItemGroup>
@@ -95,6 +96,7 @@
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\Janela.h" />
     <ClInclude Include="src\Renderizador.h" />
+    <ClInclude Include="src\Textura.h" />
   </ItemGroup>
 
   <ItemGroup>

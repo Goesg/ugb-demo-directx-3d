@@ -3,16 +3,17 @@
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
 #include <wrl/client.h>
+#include "Textura.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
 
+// Vértice com posição 3D e coordenadas de textura UV
 struct Vertice {
     XMFLOAT3 posicao;
-    XMFLOAT4 cor;
+    XMFLOAT2 uv;
 };
 
-// Deve ter tamanho múltiplo de 16 bytes — requisito do HLSL cbuffer
 struct __declspec(align(16)) DadosConstantes {
     XMMATRIX matrizMundo;
     XMMATRIX matrizVisao;
@@ -26,7 +27,8 @@ public:
 
     bool inicializar(HWND hwnd, int largura, int altura);
     void limparTela(float r, float g, float b, float a = 1.0f);
-    void desenharCubo(const XMMATRIX& mundo, const XMMATRIX& visao, const XMMATRIX& projecao);
+    void desenharCubo(const XMMATRIX& mundo, const XMMATRIX& visao,
+                      const XMMATRIX& projecao, Textura& textura);
     void apresentar();
 
     ID3D11Device*        obterDevice()   const { return device.Get(); }
@@ -44,7 +46,6 @@ private:
     ComPtr<ID3D11RenderTargetView>  renderTargetView;
     ComPtr<ID3D11DepthStencilView>  depthStencilView;
     ComPtr<ID3D11Texture2D>         depthStencilBuffer;
-
     ComPtr<ID3D11VertexShader>      vertexShader;
     ComPtr<ID3D11PixelShader>       pixelShader;
     ComPtr<ID3D11InputLayout>       inputLayout;

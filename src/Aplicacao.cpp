@@ -1,4 +1,5 @@
 #include "Aplicacao.h"
+#include <windows.h>
 
 Aplicacao::Aplicacao()
     : janela(std::make_unique<Janela>(LARGURA, ALTURA, L"Demo 3D DirectX 11"))
@@ -10,6 +11,15 @@ Aplicacao::Aplicacao()
 bool Aplicacao::inicializar() {
     if (!janela->inicializar())     return false;
     if (!renderizador->inicializar(janela->obterHwnd(), LARGURA, ALTURA)) return false;
+
+    if (!textura.carregar(renderizador->obterDevice(),
+                          renderizador->obterContexto(),
+                          "assets/textures/textura.png")) {
+        MessageBoxW(nullptr, L"Falha ao carregar textura.\nVerifique se assets/textures/textura.png existe.",
+                    L"Erro", MB_OK | MB_ICONWARNING);
+        return false;
+    }
+
     return true;
 }
 
@@ -18,9 +28,9 @@ void Aplicacao::executar() {
     auto ultimoTempo = Relogio::now();
 
     while (janela->processarMensagens()) {
-        auto agora      = Relogio::now();
+        auto agora       = Relogio::now();
         float deltaTempo = std::chrono::duration<float>(agora - ultimoTempo).count();
-        ultimoTempo     = agora;
+        ultimoTempo      = agora;
 
         atualizar(deltaTempo);
         renderizar();
@@ -38,6 +48,7 @@ void Aplicacao::renderizar() {
     renderizador->limparTela(0.05f, 0.08f, 0.15f);
     renderizador->desenharCubo(matrizMundo,
                                 camera->obterMatrizVisao(),
-                                camera->obterMatrizProjecao());
+                                camera->obterMatrizProjecao(),
+                                textura);
     renderizador->apresentar();
 }
