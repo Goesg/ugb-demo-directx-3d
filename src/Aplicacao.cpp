@@ -1,5 +1,4 @@
 #include "Aplicacao.h"
-#include <windows.h>
 
 Aplicacao::Aplicacao()
     : janela(std::make_unique<Janela>(LARGURA, ALTURA, L"Demo 3D DirectX 11"))
@@ -9,7 +8,7 @@ Aplicacao::Aplicacao()
 }
 
 bool Aplicacao::inicializar() {
-    if (!janela->inicializar())     return false;
+    if (!janela->inicializar()) return false;
     if (!renderizador->inicializar(janela->obterHwnd(), LARGURA, ALTURA)) return false;
 
     if (!textura.carregar(renderizador->obterDevice(),
@@ -49,6 +48,6 @@ void Aplicacao::renderizar() {
     renderizador->desenharCubo(matrizMundo,
                                 camera->obterMatrizVisao(),
                                 camera->obterMatrizProjecao(),
-                                textura);
+                                textura, luz);
     renderizador->apresentar();
 }

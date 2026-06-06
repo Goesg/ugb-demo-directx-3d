@@ -6,12 +6,14 @@ cbuffer ConstantBuffer : register(b0) {
 
 struct EntradaVS {
     float3 posicao : POSITION;
+    float3 normal  : NORMAL;
     float2 uv      : TEXCOORD0;
 };
 
 struct SaidaVS {
-    float4 posicao : SV_POSITION;
-    float2 uv      : TEXCOORD0;
+    float4 posicao       : SV_POSITION;
+    float3 normalMundo   : NORMAL;      // normal transformada para world space
+    float2 uv            : TEXCOORD0;
 };
 
 SaidaVS main(EntradaVS entrada) {
@@ -21,8 +23,12 @@ SaidaVS main(EntradaVS entrada) {
     pos = mul(pos, matrizMundo);
     pos = mul(pos, matrizVisao);
     pos = mul(pos, matrizProjecao);
-
     saida.posicao = pos;
-    saida.uv      = entrada.uv;
+
+    // Transformar a normal para world space (apenas rotação — sem translação)
+    // Para escala uniforme, usar a matriz mundo diretamente é suficiente
+    saida.normalMundo = normalize(mul(float4(entrada.normal, 0.0f), matrizMundo).xyz);
+
+    saida.uv = entrada.uv;
     return saida;
 }

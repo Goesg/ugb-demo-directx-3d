@@ -26,6 +26,14 @@ private:
     XMMATRIX matrizMundo;
     float    anguloRotacao = 0.0f;
 
+    // Luz direcional apontando para baixo e para frente (diagonal)
+    DadosLuz luz = {
+        XMFLOAT3(0.5f, -0.8f, 0.3f), // direcaoLuz (normalizada no shader)
+        1.0f,                          // intensidade
+        XMFLOAT3(1.0f, 1.0f, 1.0f),  // corLuz (branca)
+        0.15f                          // ambiente (15% mínimo)
+    };
+
     static constexpr int LARGURA = 1280;
     static constexpr int ALTURA  = 720;
 };

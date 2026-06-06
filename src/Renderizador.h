@@ -8,9 +8,10 @@
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
 
-// Vértice com posição 3D e coordenadas de textura UV
+// Vértice com posição, normal e UV
 struct Vertice {
     XMFLOAT3 posicao;
+    XMFLOAT3 normal;
     XMFLOAT2 uv;
 };
 
@@ -18,6 +19,14 @@ struct __declspec(align(16)) DadosConstantes {
     XMMATRIX matrizMundo;
     XMMATRIX matrizVisao;
     XMMATRIX matrizProjecao;
+};
+
+// Alinhamento 16 bytes: float3 (12) + float (4) = 16, float3 (12) + float (4) = 16
+struct __declspec(align(16)) DadosLuz {
+    XMFLOAT3 direcaoLuz;
+    float    intensidade;
+    XMFLOAT3 corLuz;
+    float    ambiente;
 };
 
 class Renderizador {
@@ -28,7 +37,8 @@ public:
     bool inicializar(HWND hwnd, int largura, int altura);
     void limparTela(float r, float g, float b, float a = 1.0f);
     void desenharCubo(const XMMATRIX& mundo, const XMMATRIX& visao,
-                      const XMMATRIX& projecao, Textura& textura);
+                      const XMMATRIX& projecao, Textura& textura,
+                      const DadosLuz& luz);
     void apresentar();
 
     ID3D11Device*        obterDevice()   const { return device.Get(); }
@@ -38,7 +48,7 @@ private:
     bool criarRenderTarget();
     bool compilarShaders();
     bool criarGeometriaCubo();
-    bool criarConstantBuffer();
+    bool criarConstantBuffers();
 
     ComPtr<ID3D11Device>            device;
     ComPtr<ID3D11DeviceContext>     contexto;
@@ -52,6 +62,7 @@ private:
     ComPtr<ID3D11Buffer>            bufferVertices;
     ComPtr<ID3D11Buffer>            bufferIndices;
     ComPtr<ID3D11Buffer>            bufferConstante;
+    ComPtr<ID3D11Buffer>            bufferLuz;
 
     int largura = 0;
     int altura  = 0;
