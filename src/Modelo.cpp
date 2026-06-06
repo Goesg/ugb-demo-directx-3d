@@ -68,7 +68,8 @@ bool Modelo::carregar(ID3D11Device* device, ID3D11DeviceContext* contexto,
     }
 
     if (!malha.criar(device, vertices, indices)) return false;
-    if (!textura.carregar(device, contexto, caminhoTextura)) return false;
+    if (!caminhoTextura.empty())
+        if (!textura.carregar(device, contexto, caminhoTextura)) return false;
 
     return true;
 }

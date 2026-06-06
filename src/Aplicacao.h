@@ -3,8 +3,11 @@
 #include "Renderizador.h"
 #include "Camera.h"
 #include "Modelo.h"
+#include "Textura.h"
 #include <memory>
 #include <chrono>
+#include <vector>
+#include <string>
 
 class Aplicacao {
 public:
@@ -17,6 +20,7 @@ public:
 private:
     void atualizar(float deltaTempo);
     void renderizar();
+    bool carregarTexturas();
 
     std::unique_ptr<Janela>       janela;
     std::unique_ptr<Renderizador> renderizador;
@@ -24,6 +28,10 @@ private:
     Modelo                        modelo;
 
     float anguloRotacao = 0.0f;
+
+    std::vector<Textura> texturas;
+    int  indiceTextura   = 0;
+    bool teclaTPresionada = false;
 
     DadosLuz luz = {
         XMFLOAT3(0.5f, -0.8f, 0.3f),

@@ -90,6 +90,10 @@ Ou pressione `F5` no Visual Studio para rodar com depuração.
 ## Equipe
 
 - Diego Goes
+- Gutemberg
+- Júlio
+- Hugo
+- Thomas
 
 ---
 
