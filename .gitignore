@@ -13,7 +13,8 @@ ipch/
 x64/
 Debug/
 Release/
-*.obj
+# arquivos objeto de compilação C++ (não modelos 3D)
+build/**/*.obj
 *.pdb
 *.ilk
 *.exp
