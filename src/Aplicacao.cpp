@@ -33,17 +33,37 @@ bool Aplicacao::carregarTexturas() {
     return !texturas.empty();
 }
 
+bool Aplicacao::carregarModelos() {
+    namespace fs = std::filesystem;
+    const fs::path pastaModelos = "assets/models";
+
+    std::vector<std::string> caminhos;
+    for (const auto& entrada : fs::directory_iterator(pastaModelos)) {
+        if (entrada.path().extension() == ".obj")
+            caminhos.push_back(entrada.path().string());
+    }
+    std::sort(caminhos.begin(), caminhos.end());
+
+    for (const auto& caminho : caminhos) {
+        modelos.emplace_back();
+        if (!modelos.back().carregar(renderizador->obterDevice(),
+                                     renderizador->obterContexto(),
+                                     caminho, "")) {
+            modelos.pop_back();
+        }
+    }
+
+    return !modelos.empty();
+}
+
 bool Aplicacao::inicializar() {
     if (!janela->inicializar()) return false;
     if (!renderizador->inicializar(janela->obterHwnd(), LARGURA, ALTURA)) return false;
 
-    if (!modelo.carregar(renderizador->obterDevice(),
-                         renderizador->obterContexto(),
-                         "assets/models/modelo.obj",
-                         "")) { // textura gerenciada separadamente
+    if (!carregarModelos()) {
         MessageBoxW(nullptr,
-                    L"Falha ao carregar modelo.\n"
-                    L"Verifique se existe: assets/models/modelo.obj",
+                    L"Nenhum modelo OBJ encontrado em assets/models/.\n"
+                    L"Adicione ao menos um arquivo .obj na pasta.",
                     L"Erro", MB_OK | MB_ICONWARNING);
         return false;
     }
@@ -77,21 +97,27 @@ void Aplicacao::atualizar(float deltaTempo) {
     camera->processar(deltaTempo);
 
     anguloRotacao += deltaTempo * 0.5f;
-    modelo.definirMatrizMundo(XMMatrixRotationY(anguloRotacao));
+    modelos[indiceModelo].definirMatrizMundo(XMMatrixRotationY(anguloRotacao));
 
-    // Alternar textura com T (detectar borda de descida para não pular várias)
     bool tAtiva = (GetAsyncKeyState('T') & 0x8000) != 0;
     if (tAtiva && !teclaTPresionada)
         indiceTextura = (indiceTextura + 1) % static_cast<int>(texturas.size());
     teclaTPresionada = tAtiva;
+
+    bool mAtiva = (GetAsyncKeyState('M') & 0x8000) != 0;
+    if (mAtiva && !teclaMPresionada) {
+        indiceModelo = (indiceModelo + 1) % static_cast<int>(modelos.size());
+        anguloRotacao = 0.0f; // reinicia rotação ao trocar de modelo
+    }
+    teclaMPresionada = mAtiva;
 }
 
 void Aplicacao::renderizar() {
     renderizador->limparTela(0.05f, 0.08f, 0.15f);
     renderizador->desenharModelo(
-        modelo.obterMalha(),
+        modelos[indiceModelo].obterMalha(),
         texturas[indiceTextura],
-        modelo.obterMatrizMundo(),
+        modelos[indiceModelo].obterMatrizMundo(),
         camera->obterMatrizVisao(),
         camera->obterMatrizProjecao(),
         luz
