@@ -1,10 +1,12 @@
+// NOMINMAX deve vir antes de qualquer include que puxe windows.h
+// Evita conflito entre as macros min/max do Windows e o TinyObjLoader
+#define NOMINMAX
+#define TINYOBJLOADER_IMPLEMENTATION
+#include "tiny_obj_loader.h"
+
 #include "Modelo.h"
 #include <unordered_map>
 #include <string>
-
-// Ativar implementação do TinyObjLoader (apenas uma vez no projeto)
-#define TINYOBJLOADER_IMPLEMENTATION
-#include "tiny_obj_loader.h"
 
 bool Modelo::carregar(ID3D11Device* device, ID3D11DeviceContext* contexto,
                       const std::string& caminhoObj,
