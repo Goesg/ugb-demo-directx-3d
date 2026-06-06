@@ -22,19 +22,32 @@ private:
     void renderizar();
     bool carregarTexturas();
     bool carregarModelos();
+    XMMATRIX calcularMatrizMundo() const;
 
     std::unique_ptr<Janela>       janela;
     std::unique_ptr<Renderizador> renderizador;
     std::unique_ptr<Camera>       camera;
 
-    float anguloRotacao = 0.0f;
+    // --- rotação ---
+    enum class EixoRotacao { X, Y, Z, Combinado };
+    EixoRotacao eixoRotacao   = EixoRotacao::Y;
+    float       anguloRotacao = 0.0f;
+    bool        rotacaoPausada  = false;
+    bool        teclaRPresionada = false;
+    bool        cliquePausaPresionado = false;
 
+    // --- posição e escala do modelo ---
+    XMFLOAT3 posicaoModelo = { 0.0f, 0.0f, 0.0f };
+    float    escalaModelo  = 1.0f;
+
+    // --- texturas ---
     std::vector<Textura> texturas;
     int  indiceTextura    = 0;
     bool teclaTPresionada = false;
 
+    // --- modelos ---
     std::vector<Modelo> modelos;
-    int  indiceModelo    = 0;
+    int  indiceModelo     = 0;
     bool teclaMPresionada = false;
 
     DadosLuz luz = {

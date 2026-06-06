@@ -93,21 +93,70 @@ void Aplicacao::executar() {
     }
 }
 
+XMMATRIX Aplicacao::calcularMatrizMundo() const {
+    XMMATRIX rot;
+    switch (eixoRotacao) {
+        case EixoRotacao::X:       rot = XMMatrixRotationX(anguloRotacao); break;
+        case EixoRotacao::Z:       rot = XMMatrixRotationZ(anguloRotacao); break;
+        case EixoRotacao::Combinado:
+            rot = XMMatrixRotationRollPitchYaw(anguloRotacao, anguloRotacao * 0.7f, anguloRotacao * 0.3f);
+            break;
+        default:                   rot = XMMatrixRotationY(anguloRotacao); break;
+    }
+    // Ordem correta: Scale → Rotate → Translate
+    return XMMatrixScaling(escalaModelo, escalaModelo, escalaModelo)
+         * rot
+         * XMMatrixTranslation(posicaoModelo.x, posicaoModelo.y, posicaoModelo.z);
+}
+
 void Aplicacao::atualizar(float deltaTempo) {
     camera->processar(deltaTempo);
 
-    anguloRotacao += deltaTempo * 0.5f;
-    modelos[indiceModelo].definirMatrizMundo(XMMatrixRotationY(anguloRotacao));
+    // --- pausa com clique do mouse (botão esquerdo) ---
+    bool cliqueAtivo = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+    if (cliqueAtivo && !cliquePausaPresionado)
+        rotacaoPausada = !rotacaoPausada;
+    cliquePausaPresionado = cliqueAtivo;
 
+    // --- rotação ---
+    if (!rotacaoPausada)
+        anguloRotacao += deltaTempo * 0.5f;
+
+    // --- ciclar eixo de rotação com R ---
+    bool rAtiva = (GetAsyncKeyState('R') & 0x8000) != 0;
+    if (rAtiva && !teclaRPresionada)
+        eixoRotacao = static_cast<EixoRotacao>((static_cast<int>(eixoRotacao) + 1) % 4);
+    teclaRPresionada = rAtiva;
+
+    // --- mover objeto (Numpad) ---
+    const float velPos = 2.0f * deltaTempo;
+    if (GetAsyncKeyState(VK_NUMPAD4) & 0x8000) posicaoModelo.x -= velPos;
+    if (GetAsyncKeyState(VK_NUMPAD6) & 0x8000) posicaoModelo.x += velPos;
+    if (GetAsyncKeyState(VK_NUMPAD8) & 0x8000) posicaoModelo.z -= velPos;
+    if (GetAsyncKeyState(VK_NUMPAD2) & 0x8000) posicaoModelo.z += velPos;
+    if (GetAsyncKeyState(VK_NUMPAD9) & 0x8000) posicaoModelo.y += velPos;
+    if (GetAsyncKeyState(VK_NUMPAD3) & 0x8000) posicaoModelo.y -= velPos;
+
+    // --- escala (+ / -) ---
+    const float velEscala = 1.0f * deltaTempo;
+    if (GetAsyncKeyState(VK_OEM_PLUS)  & 0x8000) escalaModelo += velEscala;
+    if (GetAsyncKeyState(VK_OEM_MINUS) & 0x8000) escalaModelo = max(0.05f, escalaModelo - velEscala);
+
+    modelos[indiceModelo].definirMatrizMundo(calcularMatrizMundo());
+
+    // --- alternar textura com T ---
     bool tAtiva = (GetAsyncKeyState('T') & 0x8000) != 0;
     if (tAtiva && !teclaTPresionada)
         indiceTextura = (indiceTextura + 1) % static_cast<int>(texturas.size());
     teclaTPresionada = tAtiva;
 
+    // --- alternar modelo com M ---
     bool mAtiva = (GetAsyncKeyState('M') & 0x8000) != 0;
     if (mAtiva && !teclaMPresionada) {
-        indiceModelo = (indiceModelo + 1) % static_cast<int>(modelos.size());
-        anguloRotacao = 0.0f; // reinicia rotação ao trocar de modelo
+        indiceModelo    = (indiceModelo + 1) % static_cast<int>(modelos.size());
+        anguloRotacao   = 0.0f;
+        posicaoModelo   = { 0.0f, 0.0f, 0.0f };
+        escalaModelo    = 1.0f;
     }
     teclaMPresionada = mAtiva;
 }
