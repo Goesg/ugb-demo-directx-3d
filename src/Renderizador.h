@@ -5,6 +5,9 @@
 #include <wrl/client.h>
 #include "Textura.h"
 
+// forward declaration para evitar inclusão circular
+class Malha;
+
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
 
@@ -39,6 +42,9 @@ public:
     void desenharCubo(const XMMATRIX& mundo, const XMMATRIX& visao,
                       const XMMATRIX& projecao, Textura& textura,
                       const DadosLuz& luz);
+    void desenharModelo(Malha& malha, Textura& textura,
+                        const XMMATRIX& mundo, const XMMATRIX& visao,
+                        const XMMATRIX& projecao, const DadosLuz& luz);
     void apresentar();
 
     ID3D11Device*        obterDevice()   const { return device.Get(); }

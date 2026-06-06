@@ -1,4 +1,5 @@
 #include "Renderizador.h"
+#include "Malha.h"
 
 bool Renderizador::inicializar(HWND hwnd, int largura, int altura) {
     this->largura = largura;
@@ -223,6 +224,38 @@ void Renderizador::desenharCubo(const XMMATRIX& mundo, const XMMATRIX& visao,
     contexto->PSSetShader(pixelShader.Get(), nullptr, 0);
 
     contexto->DrawIndexed(36, 0, 0);
+}
+
+void Renderizador::desenharModelo(Malha& malha, Textura& textura,
+                                   const XMMATRIX& mundo, const XMMATRIX& visao,
+                                   const XMMATRIX& projecao, const DadosLuz& luz) {
+    // Reutiliza exatamente o mesmo pipeline do cubo — só muda a geometria
+    D3D11_MAPPED_SUBRESOURCE msr;
+    contexto->Map(bufferConstante.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
+    DadosConstantes* dc = reinterpret_cast<DadosConstantes*>(msr.pData);
+    dc->matrizMundo    = XMMatrixTranspose(mundo);
+    dc->matrizVisao    = XMMatrixTranspose(visao);
+    dc->matrizProjecao = XMMatrixTranspose(projecao);
+    contexto->Unmap(bufferConstante.Get(), 0);
+    contexto->VSSetConstantBuffers(0, 1, bufferConstante.GetAddressOf());
+
+    contexto->Map(bufferLuz.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
+    *reinterpret_cast<DadosLuz*>(msr.pData) = luz;
+    contexto->Unmap(bufferLuz.Get(), 0);
+    contexto->PSSetConstantBuffers(1, 1, bufferLuz.GetAddressOf());
+
+    ID3D11ShaderResourceView* srv = textura.obterSRV();
+    ID3D11SamplerState*       smp = textura.obterAmostrador();
+    contexto->PSSetShaderResources(0, 1, &srv);
+    contexto->PSSetSamplers(0, 1, &smp);
+
+    malha.bind(contexto.Get());
+    contexto->IASetInputLayout(inputLayout.Get());
+    contexto->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    contexto->VSSetShader(vertexShader.Get(), nullptr, 0);
+    contexto->PSSetShader(pixelShader.Get(), nullptr, 0);
+
+    contexto->DrawIndexed(malha.obterNumIndices(), 0, 0);
 }
 
 void Renderizador::apresentar() {

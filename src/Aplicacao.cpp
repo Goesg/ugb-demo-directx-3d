@@ -11,10 +11,15 @@ bool Aplicacao::inicializar() {
     if (!janela->inicializar()) return false;
     if (!renderizador->inicializar(janela->obterHwnd(), LARGURA, ALTURA)) return false;
 
-    if (!textura.carregar(renderizador->obterDevice(),
-                          renderizador->obterContexto(),
-                          "assets/textures/textura.png")) {
-        MessageBoxW(nullptr, L"Falha ao carregar textura.\nVerifique se assets/textures/textura.png existe.",
+    if (!modelo.carregar(renderizador->obterDevice(),
+                         renderizador->obterContexto(),
+                         "assets/models/modelo.obj",
+                         "assets/textures/textura.png")) {
+        MessageBoxW(nullptr,
+                    L"Falha ao carregar modelo.\n"
+                    L"Verifique se existem:\n"
+                    L"  assets/models/modelo.obj\n"
+                    L"  assets/textures/textura.png",
                     L"Erro", MB_OK | MB_ICONWARNING);
         return false;
     }
@@ -40,14 +45,18 @@ void Aplicacao::atualizar(float deltaTempo) {
     camera->processar(deltaTempo);
 
     anguloRotacao += deltaTempo * 0.5f;
-    matrizMundo = XMMatrixRotationY(anguloRotacao);
+    modelo.definirMatrizMundo(XMMatrixRotationY(anguloRotacao));
 }
 
 void Aplicacao::renderizar() {
     renderizador->limparTela(0.05f, 0.08f, 0.15f);
-    renderizador->desenharCubo(matrizMundo,
-                                camera->obterMatrizVisao(),
-                                camera->obterMatrizProjecao(),
-                                textura, luz);
+    renderizador->desenharModelo(
+        modelo.obterMalha(),
+        modelo.obterTextura(),
+        modelo.obterMatrizMundo(),
+        camera->obterMatrizVisao(),
+        camera->obterMatrizProjecao(),
+        luz
+    );
     renderizador->apresentar();
 }

@@ -2,7 +2,7 @@
 #include "Janela.h"
 #include "Renderizador.h"
 #include "Camera.h"
-#include "Textura.h"
+#include "Modelo.h"
 #include <memory>
 #include <chrono>
 
@@ -21,17 +21,15 @@ private:
     std::unique_ptr<Janela>       janela;
     std::unique_ptr<Renderizador> renderizador;
     std::unique_ptr<Camera>       camera;
-    Textura                       textura;
+    Modelo                        modelo;
 
-    XMMATRIX matrizMundo;
-    float    anguloRotacao = 0.0f;
+    float anguloRotacao = 0.0f;
 
-    // Luz direcional apontando para baixo e para frente (diagonal)
     DadosLuz luz = {
-        XMFLOAT3(0.5f, -0.8f, 0.3f), // direcaoLuz (normalizada no shader)
-        1.0f,                          // intensidade
-        XMFLOAT3(1.0f, 1.0f, 1.0f),  // corLuz (branca)
-        0.15f                          // ambiente (15% mínimo)
+        XMFLOAT3(0.5f, -0.8f, 0.3f),
+        1.0f,
+        XMFLOAT3(1.0f, 1.0f, 1.0f),
+        0.15f
     };
 
     static constexpr int LARGURA = 1280;
