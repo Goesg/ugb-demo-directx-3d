@@ -1,29 +1,72 @@
 # Demo 3D DirectX 11
 
-Projeto acadêmico de Computação Gráfica — Tech Demo interativo 3D desenvolvido com DirectX 11 e C++.
+> Projeto acadêmico de Computação Gráfica — Tech Demo interativo 3D desenvolvido com DirectX 11 e C++ puro, sem engines ou frameworks de alto nível.
+
+![Resultado final — modelo 3D com textura e iluminação](doc/images/resultado-frontal.png)
+*Cena renderizada em tempo real: modelo OBJ externo com textura PNG e iluminação direcional de Lambert.*
 
 ---
 
-## Tecnologias Utilizadas
+## Sobre o Projeto
 
-- C++ 17
-- DirectX 11 (D3D11)
-- Win32 API
-- HLSL Shaders
-- Visual Studio 2022
-- Windows SDK 10.0
+Este Tech Demo demonstra, na prática, os fundamentos do pipeline gráfico de baixo nível utilizando a API **Direct3D 11** da Microsoft. Toda a cadeia de renderização foi implementada manualmente em C++: inicialização do dispositivo gráfico, criação de buffers de vértices e índices, programação de shaders em HLSL, transformações com matrizes MVP, câmera FPS interativa, texturização e iluminação direcional.
+
+O projeto foi desenvolvido em etapas incrementais — da janela vazia ao modelo 3D interativo — com documentação técnica registrada a cada etapa.
+
+---
+
+## Demonstração
+
+![Visão lateral evidenciando iluminação](doc/images/resultado-lateral.png)
+*Vista lateral: a iluminação direcional de Lambert cria gradação de brilho nas faces do modelo conforme o ângulo em relação à luz.*
+
+![Câmera aproximada — detalhe da textura](doc/images/resultado-proximo.png)
+*Câmera próxima ao modelo: filtragem bilinear da textura visível nos detalhes.*
+
+### Vídeo Demonstrativo
+
+[![Assista ao vídeo demonstrativo](doc/images/etapa7-modelo.png)](doc/images/video-demo.mp4)
+*Clique para assistir ao vídeo demonstrativo completo — compilação, execução e todas as funcionalidades interativas.*
+
+> Adicione o link do YouTube ou Google Drive aqui após o upload do vídeo.
+
+---
+
+## Funcionalidades
+
+| Categoria | Funcionalidade |
+|---|---|
+| **Renderização** | Pipeline DirectX 11 completo (IA → VS → RS → PS → OM) |
+| **Modelos** | Carregamento de OBJ externos via TinyObjLoader |
+| **Texturas** | Carregamento de PNG via stb_image, filtragem bilinear |
+| **Iluminação** | Luz direcional com modelo difuso de Lambert + componente ambiente |
+| **Câmera** | FPS interativa com WASD e setas do teclado |
+| **Interatividade** | Trocar modelo, textura, eixo de rotação, posição, escala em runtime |
+
+---
+
+## Tecnologias
+
+- **C++ 17** — linguagem principal
+- **DirectX 11 (D3D11)** — API gráfica
+- **HLSL** — shaders de vértice e pixel
+- **Win32 API** — janela e entrada de teclado/mouse
+- **Visual Studio 2022** — compilador e IDE
+- **Windows SDK 10.0** — headers e libs DirectX
 
 ### Bibliotecas Externas
 
-- [TinyObjLoader](https://github.com/tinyobjloader/tinyobjloader) — carregamento de modelos OBJ
-- [stb_image](https://github.com/nothings/stb) — carregamento de texturas
-- DirectXMath — operações matemáticas vetoriais e matriciais
+| Biblioteca | Uso | Tipo |
+|---|---|---|
+| [TinyObjLoader](https://github.com/tinyobjloader/tinyobjloader) | Carregamento de modelos OBJ | Header-only |
+| [stb_image](https://github.com/nothings/stb) | Carregamento de texturas PNG | Header-only |
+| DirectXMath | Vetores e matrizes (SIMD) | Parte do Windows SDK |
 
 ---
 
 ## Pré-requisitos
 
-- Windows 10/11
+- Windows 10 ou Windows 11
 - Visual Studio 2022 com workload **Desenvolvimento para Desktop com C++**
 - Windows SDK 10.0 ou superior
 
@@ -31,15 +74,21 @@ Projeto acadêmico de Computação Gráfica — Tech Demo interativo 3D desenvol
 
 ## Como Compilar
 
-**Opção 1 — Visual Studio:**
-1. Abra o arquivo `Demo3D.vcxproj` no Visual Studio 2022
-2. Selecione a configuração `Debug | x64`
-3. Pressione `Ctrl+Shift+B` para compilar
+**Opção 1 — Visual Studio (recomendado):**
+
+```
+1. Abrir Demo3D.vcxproj no Visual Studio 2022
+2. Selecionar configuração: Debug | x64
+3. Ctrl + Shift + B para compilar
+```
 
 **Opção 2 — Linha de comando (Developer PowerShell for VS):**
+
 ```powershell
 .\compilar.bat
 ```
+
+O script localiza o MSBuild automaticamente nas instalações do Visual Studio 2022 e 2019.
 
 ---
 
@@ -49,9 +98,9 @@ Projeto acadêmico de Computação Gráfica — Tech Demo interativo 3D desenvol
 .\build\x64\Debug\Demo3D.exe
 ```
 
-Ou pressione `F5` no Visual Studio para rodar com depuração.
+Ou pressione `F5` no Visual Studio para rodar com o debugger anexado.
 
-> O executável deve ser rodado a partir da raiz do projeto para que os assets (modelos e texturas) sejam encontrados corretamente.
+> **Importante:** execute sempre a partir da raiz do projeto. O executável carrega os assets pelo caminho relativo `assets/models/` e `assets/textures/`.
 
 ---
 
@@ -65,40 +114,37 @@ Ou pressione `F5` no Visual Studio para rodar com depuração.
 | `S` | Mover câmera para trás |
 | `A` | Mover câmera para esquerda |
 | `D` | Mover câmera para direita |
-| `Seta esquerda / direita` | Rotacionar câmera horizontalmente (yaw) |
-| `Seta cima / baixo` | Rotacionar câmera verticalmente (pitch) |
+| `← →` (setas) | Rotacionar câmera horizontalmente |
+| `↑ ↓` (setas) | Rotacionar câmera verticalmente |
 
 ### Objeto — Rotação
 
 | Tecla / Input | Ação |
 |---|---|
-| `R` | Cicla o eixo de rotação: Y → X → Z → Combinado |
-| `Clique esquerdo do mouse` | Pausa / retoma a rotação do objeto |
+| `R` | Ciclar eixo: **Y** → **X** → **Z** → **Combinado** → Y |
+| Clique esquerdo | Pausar / retomar rotação automática |
 
-### Objeto — Posição
+### Objeto — Posição (Numpad)
 
 | Tecla | Ação |
 |---|---|
-| `Numpad 4` | Mover objeto para esquerda (eixo X−) |
-| `Numpad 6` | Mover objeto para direita (eixo X+) |
-| `Numpad 8` | Mover objeto para frente (eixo Z−) |
-| `Numpad 2` | Mover objeto para trás (eixo Z+) |
-| `Numpad 9` | Mover objeto para cima (eixo Y+) |
-| `Numpad 3` | Mover objeto para baixo (eixo Y−) |
+| `Num 4 / Num 6` | Mover em X (esquerda / direita) |
+| `Num 8 / Num 2` | Mover em Z (frente / trás) |
+| `Num 9 / Num 3` | Mover em Y (cima / baixo) |
 
 ### Objeto — Escala
 
 | Tecla | Ação |
 |---|---|
-| `=` | Aumentar escala do objeto |
-| `-` | Diminuir escala do objeto |
+| `=` | Aumentar escala |
+| `-` | Diminuir escala |
 
 ### Cena
 
 | Tecla | Ação |
 |---|---|
-| `T` | Alternar textura (cicla pelos arquivos em `assets/textures/`) |
-| `M` | Alternar modelo 3D (cicla pelos arquivos em `assets/models/`) |
+| `T` | Próxima textura (cicla os PNGs de `assets/textures/`) |
+| `M` | Próximo modelo (cicla os OBJs de `assets/models/`) |
 | `ESC` | Fechar a aplicação |
 
 > Ao trocar de modelo com `M`, posição, escala e ângulo de rotação são resetados automaticamente.
@@ -107,35 +153,48 @@ Ou pressione `F5` no Visual Studio para rodar com depuração.
 
 ## Adicionando Conteúdo
 
-### Novos modelos
+O Demo carrega automaticamente todos os arquivos das pastas de assets na inicialização — sem necessidade de recompilar.
 
-Coloque arquivos `.obj` em `assets/models/`. O Demo carrega todos automaticamente na inicialização e os disponibiliza via `M`. O modelo deve ter normais e UVs exportados.
+### Modelos
 
-### Novas texturas
+Adicione arquivos `.obj` em `assets/models/`. O modelo deve ter normais e UVs exportados. No Blender: **File → Export → Wavefront (.obj)** com as opções *Write Normals* e *Include UVs* marcadas.
 
-Coloque arquivos `.png` em `assets/textures/`. O Demo carrega todas automaticamente na inicialização e as disponibiliza via `T`.
+### Texturas
+
+Adicione arquivos `.png` em `assets/textures/`.
 
 > Modelos e texturas são carregados em **ordem alfabética** pelo nome do arquivo.
 
 ---
 
-## Funcionalidades Implementadas
+## Evolução do Projeto
 
-- [x] Janela Win32
-- [x] Inicialização DirectX 11
-- [x] Swap Chain + Render Target + Depth Buffer
-- [x] Render loop com delta time
-- [x] Triângulo e cubo 3D (geometria hardcoded)
-- [x] Câmera FPS interativa (WASD + setas)
-- [x] Texturização com stb_image
-- [x] Iluminação direcional difusa (Lambert)
-- [x] Carregamento de modelos OBJ externos (TinyObjLoader)
-- [x] Alternância de texturas em runtime (tecla T)
-- [x] Alternância de modelos em runtime (tecla M)
-- [x] Ciclo de eixo de rotação (tecla R)
-- [x] Pausa da rotação com clique do mouse
-- [x] Movimentação do objeto no espaço 3D (Numpad)
-- [x] Escala do objeto em runtime (= / -)
+O projeto foi construído em 7 etapas incrementais:
+
+![Evolução visual — etapas 1 a 7](doc/images/evolucao-etapas.png)
+
+| Etapa | Resultado | Screenshot |
+|---|---|---|
+| 1 — Janela + DirectX | Tela azul escuro com render loop | ![](doc/images/etapa1-janela.png) |
+| 2 — Triângulo | Primeiro draw call via pipeline D3D11 | ![](doc/images/etapa2-triangulo.png) |
+| 3 — Cubo 3D | Index buffer, matrizes MVP, delta time | ![](doc/images/etapa3-cubo.png) |
+| 4 — Câmera FPS | Navegação interativa com WASD e setas | ![](doc/images/etapa4-camera.png) |
+| 5 — Texturização | PNG mapeado via UVs com stb_image | ![](doc/images/etapa5-textura.png) |
+| 6 — Iluminação | Lambert difusa + componente ambiente | ![](doc/images/etapa6-iluminacao.png) |
+| 7 — Modelo OBJ | TinyObjLoader com reindexação de vértices | ![](doc/images/etapa7-modelo.png) |
+
+---
+
+## Features Interativas
+
+![Alternância de modelos com M](doc/images/feature-trocar-modelo.png)
+*Tecla M: alterna entre todos os modelos OBJ encontrados em `assets/models/`.*
+
+![Alternância de texturas com T](doc/images/feature-trocar-textura.png)
+*Tecla T: alterna entre todas as texturas PNG encontradas em `assets/textures/`.*
+
+![Eixos de rotação com R](doc/images/feature-rotacao-eixos.png)
+*Tecla R: cicla o eixo de rotação entre Y (padrão), X (tomba), Z (rola) e Combinado.*
 
 ---
 
@@ -148,24 +207,67 @@ Coloque arquivos `.png` em `assets/textures/`. O Demo carrega todas automaticame
 │   ├── Aplicacao.h/cpp    → orquestrador: loop, entrada, cena
 │   ├── Janela.h/cpp       → janela Win32
 │   ├── Renderizador.h/cpp → pipeline DirectX 11, draw calls
-│   ├── Camera.h/cpp       → câmera FPS
-│   ├── Modelo.h/cpp       → carregamento OBJ
-│   ├── Malha.h/cpp        → vertex/index buffers
-│   └── Textura.h/cpp      → carregamento de imagens PNG
+│   ├── Camera.h/cpp       → câmera FPS (yaw/pitch, WASD)
+│   ├── Modelo.h/cpp       → carregamento OBJ + world matrix
+│   ├── Malha.h/cpp        → vertex/index buffers genéricos
+│   └── Textura.h/cpp      → carregamento PNG → GPU
 ├── shaders/
-│   ├── VertexShader.hlsl  → transformação MVP + normais
-│   └── PixelShader.hlsl   → texturização + iluminação
+│   ├── VertexShader.hlsl  → transformação MVP + normais para world space
+│   └── PixelShader.hlsl   → texturização + iluminação de Lambert
 ├── assets/
-│   ├── models/            → modelos OBJ (adicione aqui)
-│   └── textures/          → texturas PNG (adicione aqui)
+│   ├── models/            → adicione arquivos .obj aqui
+│   └── textures/          → adicione arquivos .png aqui
 ├── external/
-│   ├── tinyobjloader/     → TinyObjLoader (header-only)
-│   └── stb/               → stb_image (header-only)
-├── doc/                   → documentação técnica por etapa
+│   ├── tinyobjloader/     → tiny_obj_loader.h
+│   └── stb/               → stb_image.h
+├── doc/
+│   ├── images/            → screenshots e vídeo demonstrativo
+│   ├── etapa1-janela-e-directx.md
+│   ├── etapa2-triangulo-colorido.md
+│   ├── etapa3-cubo-3d.md
+│   ├── etapa4-camera-fps.md
+│   ├── etapa5-texturizacao.md
+│   ├── etapa6-iluminacao.md
+│   ├── etapa7-modelo-obj.md
+│   ├── analise-renderizacao-texto-hud.md
+│   └── relatorio-tecnico-academico.md
 ├── build/                 → binários gerados (ignorado no git)
-├── compilar.bat           → script de build via linha de comando
+├── compilar.bat           → build via linha de comando
 └── Demo3D.vcxproj         → projeto Visual Studio
 ```
+
+![Estrutura de pastas no explorador](doc/images/estrutura-projeto.png)
+*Organização do repositório: separação clara entre código-fonte, shaders, assets, dependências e documentação.*
+
+---
+
+## Shaders HLSL
+
+O projeto implementa dois shaders programáveis em HLSL:
+
+![Vertex Shader no editor](doc/images/codigo-vertex-shader.png)
+*Vertex Shader: aplica transformações MVP (Model → World → View → Clip space) e converte normais para world space.*
+
+![Pixel Shader no editor](doc/images/codigo-pixel-shader.png)
+*Pixel Shader: amostra a textura e calcula iluminação difusa de Lambert com componente ambiente.*
+
+---
+
+## Documentação Técnica
+
+A pasta `doc/` contém:
+
+| Arquivo | Conteúdo |
+|---|---|
+| [etapa1-janela-e-directx.md](doc/etapa1-janela-e-directx.md) | Win32, D3D11, swap chain, render loop |
+| [etapa2-triangulo-colorido.md](doc/etapa2-triangulo-colorido.md) | Vertex buffer, shaders, draw call |
+| [etapa3-cubo-3d.md](doc/etapa3-cubo-3d.md) | Index buffer, matrizes MVP, delta time |
+| [etapa4-camera-fps.md](doc/etapa4-camera-fps.md) | Yaw/pitch, LookAt, produto vetorial |
+| [etapa5-texturizacao.md](doc/etapa5-texturizacao.md) | stb_image, Texture2D, SRV, SamplerState |
+| [etapa6-iluminacao.md](doc/etapa6-iluminacao.md) | Normais, Lambert difusa, cbuffer PS |
+| [etapa7-modelo-obj.md](doc/etapa7-modelo-obj.md) | TinyObjLoader, reindexação, Malha |
+| [analise-renderizacao-texto-hud.md](doc/analise-renderizacao-texto-hud.md) | Análise técnica de HUD: ImGui vs DirectWrite vs Atlas |
+| [relatorio-tecnico-academico.md](doc/relatorio-tecnico-academico.md) | Relatório acadêmico completo (Partes 1 e 2) |
 
 ---
 
@@ -179,6 +281,10 @@ Coloque arquivos `.png` em `assets/textures/`. O Demo carrega todas automaticame
 
 ---
 
-## Screenshots
+## Referências
 
-*(a ser adicionado)*
+- **Luna, Frank D.** — *Introduction to 3D Game Programming with DirectX 11*. Mercury Learning, 2012.
+- **Microsoft Docs** — [Direct3D 11 Programming Guide](https://learn.microsoft.com/en-us/windows/win32/direct3d11/)
+- **Microsoft Docs** — [HLSL Language Reference](https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/)
+- **TinyObjLoader** — https://github.com/tinyobjloader/tinyobjloader
+- **stb_image** — https://github.com/nothings/stb
