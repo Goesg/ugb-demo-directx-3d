@@ -26,10 +26,6 @@ O projeto foi desenvolvido em etapas incrementais — da janela vazia ao modelo 
 ### Vídeo Demonstrativo
 
 [![Assista ao vídeo demonstrativo](doc/images/video-demo.gif)](doc/images/video-demo.gif)
-*Clique para assistir ao vídeo demonstrativo completo — compilação, execução e todas as funcionalidades interativas.*
-
-> Adicione o link do YouTube ou Google Drive aqui após o upload do vídeo.
-
 ---
 
 ## Funcionalidades
