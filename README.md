@@ -167,7 +167,7 @@ Adicione arquivos `.png` em `assets/textures/`.
 
 O projeto foi construído em 7 etapas incrementais:
 
-![Evolução visual — etapas 1 a 7](doc/images/evolucao-etapas.png)
+![Evolução visual — etapas 1 a 7](doc/images/video-demo.gif)
 
 | Etapa | Resultado | Screenshot |
 |---|---|---|
@@ -183,13 +183,13 @@ O projeto foi construído em 7 etapas incrementais:
 
 ## Features Interativas
 
-![Alternância de modelos com M](doc/images/feature-trocar-modelo.png)
+![Alternância de modelos com M](doc/images/feature-trocar-modelo.gif)
 *Tecla M: alterna entre todos os modelos OBJ encontrados em `assets/models/`.*
 
-![Alternância de texturas com T](doc/images/feature-trocar-textura.png)
+![Alternância de texturas com T](doc/images/feature-trocar-textura.gif)
 *Tecla T: alterna entre todas as texturas PNG encontradas em `assets/textures/`.*
 
-![Eixos de rotação com R](doc/images/feature-rotacao-eixos.png)
+![Eixos de rotação com R](doc/images/feature-rotacao-eixos.gif)
 *Tecla R: cicla o eixo de rotação entre Y (padrão), X (tomba), Z (rola) e Combinado.*
 
 ---
